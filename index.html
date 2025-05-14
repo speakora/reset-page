@@ -1,22 +1,94 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>Reset Password</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: sans-serif; max-width: 500px; margin: 100px auto; }
-    label, input, button { display: block; width: 100%; margin: 10px 0; }
-    .message { margin-top: 20px; color: green; }
-    .error { color: red; }
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f6f8;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    .card {
+      background-color: #ffffff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    label {
+      font-weight: 600;
+      margin-top: 15px;
+    }
+
+    input {
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-top: 5px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 12px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .message {
+      margin-top: 20px;
+      font-weight: 500;
+      text-align: center;
+    }
+
+    .error {
+      color: #d9534f;
+    }
+
+    .success {
+      color: #28a745;
+    }
   </style>
 </head>
 <body>
-  <h2>Reset Your Password</h2>
-  <label for="password">New Password</label>
-  <input type="password" id="password" required>
+  <div class="card">
+    <h2>Reset Your Password</h2>
+    <label for="password">New Password</label>
+    <input type="password" id="password" placeholder="Enter new password" required>
 
-  <button onclick="submitReset()">Submit</button>
-  <div id="message" class="message"></div>
+    <label for="confirm">Confirm Password</label>
+    <input type="password" id="confirm" placeholder="Repeat new password" required>
+
+    <button onclick="submitReset()">Submit</button>
+
+    <div id="message" class="message"></div>
+  </div>
 
   <script>
     async function submitReset() {
@@ -24,30 +96,45 @@
       const token = params.get("token");
       const uuid = params.get("uuid");
       const password = document.getElementById("password").value;
+      const confirm = document.getElementById("confirm").value;
       const messageBox = document.getElementById("message");
 
-      if (!token || !uuid || !password) {
+      messageBox.textContent = "";
+      messageBox.classList.remove("error", "success");
+
+      if (!token || !uuid || !password || !confirm) {
         messageBox.textContent = "Missing fields or invalid link.";
         messageBox.classList.add("error");
         return;
       }
 
-      const response = await fetch("https://api.userfront.com/v0/tenants/pn4vqv8n/auth/reset", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Origin": "https://speakora.ca"  // Must match allowed origin in Userfront
-        },
-        body: JSON.stringify({ token, uuid, password })
-      });
+      if (password !== confirm) {
+        messageBox.textContent = "Passwords do not match.";
+        messageBox.classList.add("error");
+        return;
+      }
 
-      const result = await response.json();
+      try {
+        const response = await fetch("https://api.userfront.com/v0/tenants/pn4vqv8n/auth/reset", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Origin": "https://speakora.ca"
+          },
+          body: JSON.stringify({ token, uuid, password })
+        });
 
-      if (response.ok) {
-        messageBox.textContent = "Password reset successful! You can now log in.";
-        messageBox.classList.remove("error");
-      } else {
-        messageBox.textContent = "Reset failed: " + result.message;
+        const result = await response.json();
+
+        if (response.ok) {
+          messageBox.textContent = "✅ Password reset successful! You can now log in.";
+          messageBox.classList.add("success");
+        } else {
+          messageBox.textContent = "❌ Reset failed: " + result.message;
+          messageBox.classList.add("error");
+        }
+      } catch (err) {
+        messageBox.textContent = "An unexpected error occurred.";
         messageBox.classList.add("error");
       }
     }
